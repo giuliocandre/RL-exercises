@@ -50,6 +50,9 @@ def policy(state):
     if my_sum < 11:
         return ACTION_HIT
     
+    if my_sum == 21:
+        return ACTION_STOP
+    
     if random.random() < explore_threshold:
         return random.choice(actions)
     a = max(actions, key=lambda a : value(state, a))
@@ -80,7 +83,17 @@ def reward(state, action):
     assert(my_sum <= 21)
 
     if action == ACTION_HIT:
-        my_sum += get_card()
+        assert(my_sum < 21)
+
+        new_card = get_card()
+        # First usable ace? 
+        if new_card == 1 and not usable_ace:
+                my_sum += 11
+                usable_ace = 1
+
+        else:
+            my_sum += new_card
+        
         if my_sum > 21 and not usable_ace:
             return -1, None # Game over
         
@@ -120,7 +133,6 @@ def policy_update(n_episodes = 5000):
         for i in range(len(h) - 2, -1, -1):
             next_r, _, _ = h[i + 1]
             _, s, a = h[i]
-            # TODO: update value_map accordingly
             g += next_r
             count = counts.get((s,a), 0)
             value_map[(s,a)] = count/(count + 1)*value_map.get((s,a), 0) + g/(count + 1)
